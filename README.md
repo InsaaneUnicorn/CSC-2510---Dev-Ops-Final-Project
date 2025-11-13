@@ -2,26 +2,20 @@
 
 ## Branch: main
 > This is the production branch, when a feature is finished, and merged into the testing branch. The testing branch will get merged into production.
-> Branch Protections:
-> > I haven't made or figured them out yet :(
-> > 
 
 ## Branch: testing
 > This branch is to general test/unit test a completed feature, and to code review it before pushed to the main production branch.
 
-## Branch: Feature 1
+## Branch: web_scraping_parsing
 
 
-## Branch: Feature 2
+## Branch: user_creation_engine
 
 
-## Branch: Feature 3
+## Branch: manual_user_feature
 
 
-## Branch: Feature 4
+## Branch: license_mamagement_system
 
 
-## Branch: Feature 5
-
-
-## Branch: Feature 6
+## Branch: obfuscation_integration
