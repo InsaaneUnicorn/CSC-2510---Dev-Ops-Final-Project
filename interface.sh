@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# interface.sh — main entrypoint for DeelTech onboarding
+# interface.sh — main menu for Person 1 (scrape + parse only)
 
 set -euo pipefail
 
@@ -12,7 +12,6 @@ PARSER="${BASE_DIR}/parse.sh"
 
 mkdir -p "${DATA_DIR}"
 
-# --- Menu ---
 menu() {
   echo "==== ${APP_NAME} ===="
   echo "1) Scrape + Parse (default)"
