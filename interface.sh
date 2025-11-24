@@ -1,10 +1,8 @@
-#The automated user script
 #!/usr/bin/env bash
-# ============================================
-# User Creation Engine
-# source with: source automated-user.sh
-# run with: main "First_Name" "Last_Name"
-# ============================================
+# interface.sh — main menu for Person 1 (scrape + parse only)
+
+#source file for the user creation API
+source automated-user.sh
 
 set -euo pipefail
 
@@ -62,79 +60,84 @@ require_license() {
     fi
 }
 
-# -------------------------
-# Generates username
-# -------------------------
-generate_username() {
-    FIRST="$1"
-    LAST="$2"
+APP_NAME="DeelTech Faculty Portal"
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DATA_DIR="${BASE_DIR}/data"
 
-    # Make lowercase
-    CLEAN_FIRST=$(echo "$FIRST" | tr '[:upper:]' '[:lower:]')
-    CLEAN_LAST=$(echo "$LAST" | tr '[:upper:]' '[:lower:]')
+SCRAPER="${BASE_DIR}/web-scraper.sh"
+PARSER="${BASE_DIR}/parse.sh"
+MANUAL_USER="${BASE_DIR}/manual-user.sh"
 
-    echo "${CLEAN_FIRST}.${CLEAN_LAST}"
+mkdir -p "${DATA_DIR}"
+
+menu() {
+  echo "==== ${APP_NAME} ===="
+  echo "1) Scrape + Parse (default)"
+  echo "2) Scrape only"
+  echo "3) Parse only"
+  echo "4) Create users from names list"
+  echo "5) Manually create a user"
+  echo "6) Exit"
+  read -r -p "Choice: " choice
+  case "$choice" in
+    1|"") bash "${SCRAPER}" "${DATA_DIR}" && bash "${PARSER}" "${DATA_DIR}" \
+          && echo "[OK] Names saved to ${DATA_DIR}/names.txt"
+          echo ""
+          echo "Press Enter to return to menu..."
+          read -r ;;
+    2) bash "${SCRAPER}" "${DATA_DIR}"
+       echo ""
+       echo "Press Enter to return to menu..."
+       read -r ;;
+    3) bash "${PARSER}" "${DATA_DIR}" && echo "[OK] Names saved to ${DATA_DIR}/names.txt"
+       echo ""
+       echo "Press Enter to return to menu..."
+       read -r ;;
+    4) automate_user_creation
+       echo ""
+       echo "Press Enter to return to menu..."
+       read -r ;;
+    5) bash "${MANUAL_USER}"
+       echo ""
+       echo "Press Enter to return to menu..."
+       read -r ;;
+    6) echo "Exiting..."
+       exit 0 ;;
+    *) echo "Invalid choice"
+       echo ""
+       echo "Press Enter to return to menu..."
+       read -r ;;
+  esac
 }
 
 # -------------------------
-# Generates password
+# Loops through through names.txt and makes users out of names
+# Needs scrape + parse to be ran first
 # -------------------------
-generate_password() {
-    FIRST="$1"
-    LAST="$2"
+automate_user_creation() {
+  NAMES_FILE="${DATA_DIR}/names.txt"
 
-    CLEAN_FIRST=$(echo "$FIRST" | tr '[:upper:]' '[:lower:]')
-    CLEAN_LAST=$(echo "$LAST" | tr '[:upper:]' '[:lower:]')
+  if [[ ! -f "$NAMES_FILE" ]]; then
+    echo "No names.txt found. Run scrape+parse first."
+    return 1
+  fi
 
-    echo "${CLEAN_FIRST}${CLEAN_LAST}DEELTECH"
+  echo "Creating users from names.txt..."
+
+  # This should grab a line and take the
+  # first word of the line as the first name
+  # and the last word as the last name
+  while read -r line; do
+    FIRST=$(echo "$line" | awk '{print $1}')
+    LAST=$(echo "$line" | awk '{print $NF}')
+    echo "Creating account for $FIRST $LAST..."
+    main "$FIRST" "$LAST" || true  # Continue even if user exists or creation fails
+  done < "$NAMES_FILE"
+
+  echo "Automated account creation complete."
 }
 
-# -------------------------
-# Checks if user exists
-# -------------------------
-user_exists() {
-    if id "$1" &>/dev/null; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# -------------------------
-# Main function, creates user
-# -------------------------
-main() {
-    FIRST_NAME=$1
-    LAST_NAME=$2
-
-    # Make sure there is a first and last name
-    if [[ -z "$FIRST_NAME" || -z "$LAST_NAME" ]]; then
-        echo "Error: First and last name required."
-        return 3
-    fi
-
-    USERNAME=$(generate_username "$FIRST_NAME" "$LAST_NAME")
-    PASSWORD=$(generate_password "$FIRST_NAME" "$LAST_NAME")
-
-    # Check if user exists
-    if user_exists "$USERNAME"; then
-        echo "User '$USERNAME' already exists."
-        return 1
-    fi
-
-    # Create account
-    if sudo useradd -m "$USERNAME"; then
-        echo "${USERNAME}:${PASSWORD}" | sudo chpasswd
-        echo "Created user '$USERNAME'"
-        return 0
-    else
-        echo "Failed to create user '$USERNAME'"
-        return 2
-    fi
-}
-
-# Make sure main runs ONLY when executed, not when file is sourced
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    require_license
-    main "$@"
-fi
+require_license
+while true; do
+  menu
+done
